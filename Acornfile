@@ -1,0 +1,143 @@
+name:        "Mongo Acorn"
+description: "Acorn providing MongoDB"
+readme:      "./README.md"
+info:        localData.info
+icon:        "./icon.png"
+
+args: {
+  // Name of the default database
+  dbName: "mydb"
+
+  // Name of the default user
+  dbUser: ""
+}
+
+services: db: {
+	default:   true
+	container: "mongodb"
+	secrets: ["admin", "user"]
+	ports: "27017"
+	data: dbName: args.dbName
+}
+
+containers: {
+  mongodb: {
+    name: "MongoDB"
+    description: "Container running a MongoDB server"
+    image: "mongo:6.0"
+    ports: publish: "27017/tcp"
+    env: {
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "secret://rootpassword/token"
+    }
+    dirs: {
+      "/data/db": "volume://db-data"
+    }
+    probes: [
+      {
+        type:                "liveness"
+        initialDelaySeconds: 10
+        timeoutSeconds:      5
+        tcp:{
+          url: "tcp://localhost:27017"
+        }
+      },
+      {
+        type:                "readiness"
+        initialDelaySeconds: 10
+        exec: command:       localData.readinessProbeCommand
+      },
+    ]
+  }
+}
+
+volumes: {
+  "db-data": {}
+}
+
+jobs: "create-secrets": {
+  build: context: "."
+  env: {
+    MONGO_INITDB_ROOT_USERNAME: "root"
+    MONGO_INITDB_ROOT_PASSWORD: "secret://rootpassword/token"
+    MONGO_USERNAME: "secret://username/token"
+    MONGO_PASSWORD: "secret://password/token"
+    MONGO_DATABASE: args.dbName
+  }
+}
+
+secrets: {
+  rootpassword: {
+    name: "password to be used for the root user"
+    type: "token"
+    params: {
+        length: 16
+        characters: "abcdedfhifj01234567890"
+    }
+    data: token: ""
+  }
+}
+
+secrets: {
+  username: {
+    name: "username to be used for the mongodb user"
+    type: "token"
+    params: {
+        length: 16
+        characters: "abcdedfhifj01234567890"
+    }
+    data: token: ""
+  }
+}
+
+secrets: {
+  password: {
+    name: "password to be used for the mongodb user"
+    type: "token"
+    params: {
+        length: 16
+        characters: "abcdedfhifj01234567890"
+    }
+    data: token: ""
+  }
+}
+
+secrets: {
+  "admin": {
+    type: "generated"
+    params: job: "create-secrets"
+  }
+}
+
+secrets: {
+  "user": {
+    type: "generated"
+    params: job: "create-secrets"
+  }
+}
+
+localData: readinessProbeCommand: [
+  "bash",
+  "-c",
+  "mongosh --quiet --username \"${MONGO_INITDB_ROOT_USERNAME}\" --password \"${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval \"db.adminCommand('ping')\""
+]
+
+localData: info: """
+	## Usage
+
+	services: db: {
+		external: "@{acorn.name}"
+	}
+
+	containers: app: {
+		image: "app-image"
+		env: {
+		  DB_HOST: "@{@{service.}db.address}"
+		  DB_PORT: "@{@{service.}db.port.27017}"
+		  DB_NAME: "@{@{service.}db.data.dbName}"
+		  DB_USER: "@{@{service.}db.secrets.user.username}"
+		  DB_PASS: "@{@{service.}db.secrets.user.password}"
+		}
+	}
+	"""
+
