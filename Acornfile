@@ -25,7 +25,6 @@ containers: {
     name: "MongoDB"
     description: "Container running a MongoDB server"
     image: "mongo:6.0"
-    ports: publish: "27017/tcp"
     env: {
       MONGO_INITDB_ROOT_USERNAME: "root"
       MONGO_INITDB_ROOT_PASSWORD: "secret://rootpassword/token"
