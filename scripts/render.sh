@@ -6,6 +6,7 @@ while true; do
   echo "[render.sh] wait for db to be ready"
   mongosh --quiet --host "mongodb" --username ${MONGO_INITDB_ROOT_USERNAME} --password ${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin --eval "db.runCommand({ ping: 1 })"
   if [ $? -eq 0 ]; then
+      echo "[render.sh] db is ready"
       break
   fi
   sleep 2
