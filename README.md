@@ -23,6 +23,49 @@ $ curl k8s-test3e3d-apppubli-58f1d9adf4-5081003c9ca93235.elb.us-east-2.amazonaws
 {"message":"Webpage viewed 1 time(s)"}
 ```
 
+Note: This example uses the auto-generated user, which is limited to the default database, via the following env variables:
+
+```
+containers: {
+  app: {
+    build: {
+      context: "."
+      target: "dev"
+    }
+    consumes: ["db"]
+    ports: publish: "8000/http"
+    env: {
+      DB_HOST: "@{service.db.address}"
+      DB_PORT: "@{service.db.port.27017}"
+      DB_NAME: "@{service.db.data.dbName}"               <--
+      DB_USER: "@{service.db.secrets.user.username}"     <--
+      DB_PASS: "@{service.db.secrets.user.password}"     <--
+    }
+  }
+}
+```
+
+We could have used the admin user instead, this one does not have any limitation on the whole mongodb instance.
+
+```
+containers: {
+  app: {
+    build: {
+      context: "."
+      target: "dev"
+    }
+    consumes: ["db"]
+    ports: publish: "8000/http"
+    env: {
+      DB_HOST: "@{service.db.address}"
+      DB_PORT: "@{service.db.port.27017}"
+      DB_USER: "@{service.db.secrets.admin.username}"   <--
+      DB_PASS: "@{service.db.secrets.admin.password}"   <--
+    }
+  }
+}
+```
+
 ## Parameters
 
 When the single *MongoDB* instance is created, a default user is created, this one only has admin access against a given database. By default:
