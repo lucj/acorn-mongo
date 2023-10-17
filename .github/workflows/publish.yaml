@@ -1,8 +1,8 @@
 name: Publish Acorn image
 on:
   push:
-      tags:
-        - "v*.*.*"
+    tags:
+      - "v*.*-*"
 
 jobs:
   publish:
