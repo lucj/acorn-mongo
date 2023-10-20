@@ -33,7 +33,7 @@ services: db: {
 
 The [examples folder](https://github.com/acorn-io/mongodb/tree/main/examples) contains a sample application using this Service. This app consists in a Python backend based on the FastAPI library, it displays a web page indicating the number of times the application was called, a counter is saved in the underlying MongoDB database and incremented with each request. The screenshot below shows the UI of the example application. 
 
-![UI](./images/ui.png)
+![UI](./examples/images/ui.png)
 
 To use the Mongo Service, we first define a *service* property in the Acornfile of the application:
 
