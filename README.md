@@ -1,85 +1,97 @@
-# Mongo
+## What is MongoDB ?
 
-This Acorn provides a MongoDB database as an Acorn Service. This Acorn can be used to create a database for your application during development. It runs a single Mongo container backed by a persistent volume.
+MongoDB is a popular, open-source NoSQL database system that uses a document-oriented data model. It operates with documents in a human-readable JSON-like format. It's known for its scalability and flexibility, allowing for complex queries, indexing, real-time aggregation, and server-side JavaScript execution.
 
-A default user is automatically generated during the creation process.
+## Mongo as an Acorn Service
 
-## Usage
+This Acorn provides a MongoDB database as an Acorn Service.  It can be used to easily get a MongoDB database for your application during development.
 
-In the examples folder you can find a sample application using this service. It consists in a Python backend based on the FastAPI library which returns the number of times the "/" routes has been called (this value is saved in a mongodb collection and incremented for each request).
+The Acorn image of this service is hosted in GitHub container registry at [ghcr.io/acorn-io/mongodb](ghcr.io/acorn-io/mongodb)
 
-This example can be run with the following command (make sure to run it from the *examples* folder)
+This MongoDB instance:
+- is backed by a persistent volume
+- uses a default (auto generated) password for the root user
+- defines credentials for an additional user (with access limited to a given database)
 
-```
-acorn run -n api
-```
-
-After a few tens of seconds you will be returned an http endpoint you can use to acces the application. 
-
-For instance, using this endpoint we can send an HTTP Get request using cURL:
-
-```
-$ curl k8s-test3e3d-apppubli-58f1d9adf4-5081003c9ca93235.elb.us-east-2.amazonaws.com:8000
-{"message":"Webpage viewed 1 time(s)"}
-```
-
-Note: This example uses the auto-generated user, which is limited to the default database, via the following env variables:
-
-```
-containers: {
-  app: {
-    build: {
-      context: "."
-      target: "dev"
-    }
-    consumes: ["db"]
-    ports: publish: "8000/http"
-    env: {
-      DB_HOST: "@{service.db.address}"
-      DB_PORT: "@{service.db.port.27017}"
-      DB_NAME: "@{service.db.data.dbName}"               <--
-      DB_USER: "@{service.db.secrets.user.username}"     <--
-      DB_PASS: "@{service.db.secrets.user.password}"     <--
-    }
-  }
-}
-```
-
-We could have used the admin user instead, this one does not have any limitation on the whole mongodb instance.
-
-```
-containers: {
-  app: {
-    build: {
-      context: "."
-      target: "dev"
-    }
-    consumes: ["db"]
-    ports: publish: "8000/http"
-    env: {
-      DB_HOST: "@{service.db.address}"
-      DB_PORT: "@{service.db.port.27017}"
-      DB_USER: "@{service.db.secrets.admin.username}"   <--
-      DB_PASS: "@{service.db.secrets.admin.password}"   <--
-    }
-  }
-}
-```
-
-## Parameters
-
-When the single *MongoDB* instance is created, a default user is created, this one only has admin access against a given database. By default:
-- *dbUser* is automatically generated
+By default:
+- *dbUser* of the additional user is automatically generated
 - *dbName* is set to "mydb"
 
 These values can be changed using the *serviceArgs* property as follow:
 
 ```
 services: db: {
-  image: "ghcr.io/lucj/acorn-postgres:v#.#.#"
+  image: "ghcr.io/acorn-io/mongodb:v#.#-#"
   serviceArgs: {
     dbUser: "bar"
     dbName: "foo"
   }
 }
 ```
+
+## Usage
+
+The [examples folder](https://github.com/acorn-io/mongodb/tree/main/examples) contains a sample application using this Service. This app consists in a Python backend based on the FastAPI library, it displays a web page indicating the number of times the application was called, a counter is saved in the underlying MongoDB database and incremented with each request. The screenshot below shows the UI of the example application. 
+
+![UI](./images/ui.png)
+
+To use the Mongo Service, we first define a *service* property in the Acornfile of the application:
+
+```
+services: db: {
+  image: "ghcr.io/acorn-io/mongodb:v#.#-#"
+}
+```
+
+Next we define the application container. This one can connect to the MongoDB service via environment variables which values are set based on the service's properties.
+
+```
+containers: {
+  app: {
+    build: {
+      context: "."
+      target: "dev"
+    }
+    consumes: ["db"]
+    ports: publish: "8000/http"
+    env: {
+      DB_HOST: "@{service.db.address}"
+      DB_PORT: "@{service.db.port.27017}"
+      DB_NAME: "@{service.db.data.dbName}"
+      DB_USER: "@{service.db.secrets.user.username}"
+      DB_PASS: "@{service.db.secrets.user.password}"
+    }
+  }
+}
+```
+
+Note: This example uses the auto-generated user, which is limited to the default database. We could have used the admin user instead, this one does not have any limitation on the whole mongodb instance:
+
+```
+containers: {
+  app: {
+    build: {
+      context: "."
+      target: "dev"
+    }
+    consumes: ["db"]
+    ports: publish: "8000/http"
+    env: {
+      DB_HOST: "@{service.db.address}"
+      DB_PORT: "@{service.db.port.27017}"
+      DB_USER: "@{service.db.secrets.admin.username}"   <-- using the admin user
+      DB_PASS: "@{service.db.secrets.admin.password}"   <-- using the admin pass
+    }
+  }
+}
+```
+
+This container is built using the Dockerfile in the examples folder. Once built, the container consumes the MongoDB service using the address and credentials provided through via the dedicated variables.
+
+This example can be run with the following command (to be run from the *examples* folder)
+
+```
+acorn run -n app
+```
+
+After a few tens of seconds an http endpoint will be returned. Using this endpoint we can access the application and see the counter incremented on each reload of the page.
