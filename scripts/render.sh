@@ -23,20 +23,3 @@ EOF
 echo "[render.sh] about to create user"
 mongosh --host "mongodb" --username ${MONGO_INITDB_ROOT_USERNAME} --password ${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin --eval "$(cat /tmp/create-user.js)"
 echo "[render.sh] user creation status: [$?]"
-
-# Generate secret for newly created user
-echo "[render.sh] generating admin & user secrets"
-cat > /run/secrets/output<<EOF
-secrets: "admin": {
-  data: {
-    username: "${MONGO_INITDB_ROOT_USERNAME}"
-    password: "${MONGO_INITDB_ROOT_PASSWORD}"
-  }
-}
-secrets: "user": {
-  data: {
-    username: "${MONGO_USERNAME}"
-    password: "${MONGO_PASSWORD}"
-  }
-}
-EOF
