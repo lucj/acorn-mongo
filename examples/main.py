@@ -1,8 +1,13 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pymongo import MongoClient
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 DB_HOST = os.environ.get('DB_HOST')
 DB_PORT = os.environ.get('DB_PORT')
@@ -16,8 +21,8 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME] 
 collection = db.hits_collection 
 
-@app.get('/')
-def hello():
+@app.get('/', response_class=HTMLResponse)
+async def hello(request: Request):
     # If the counter does not exist, we initialize it with a value of 0
     counter_data = collection.find_one({"_id": "page_counter"})
     if not counter_data:
@@ -30,4 +35,4 @@ def hello():
     collection.update_one({"_id": "page_counter"}, {"$inc": {"count": 1}})
     counter += 1
     
-    return {"message": f"Webpage viewed {counter} time(s)"}
+    return templates.TemplateResponse("index.html", {"request": request, "counter": counter})

@@ -27,8 +27,8 @@ containers: {
     image: "mongo:6.0"
     ports: "27017/tcp"
     env: {
-      MONGO_INITDB_ROOT_USERNAME: "root"
-      MONGO_INITDB_ROOT_PASSWORD: "secret://rootpassword/token"
+      MONGO_INITDB_ROOT_USERNAME: "secret://admin/username"
+      MONGO_INITDB_ROOT_PASSWORD: "secret://admin/password"
     }
     dirs: {
       "/data/db": "volume://db-data"
@@ -41,12 +41,7 @@ containers: {
         tcp:{
           url: "tcp://localhost:27017"
         }
-      },
-      {
-        type:                "readiness"
-        initialDelaySeconds: 10
-        exec: command:       localData.readinessProbeCommand
-      },
+      },   
     ]
   }
 }
@@ -55,78 +50,60 @@ volumes: {
   "db-data": {}
 }
 
-jobs: "create-secrets": {
+jobs: "create-user": {
   build: context: "."
   env: {
-    MONGO_INITDB_ROOT_USERNAME: "root"
-    MONGO_INITDB_ROOT_PASSWORD: "secret://rootpassword/token"
-    MONGO_USERNAME: "secret://username/token"
-    MONGO_PASSWORD: "secret://password/token"
+    MONGO_INITDB_ROOT_USERNAME: "secret://admin/username"
+    MONGO_INITDB_ROOT_PASSWORD: "secret://admin/password"
+    MONGO_USERNAME: "secret://user/username"
+    MONGO_PASSWORD: "secret://user/password"
     MONGO_DATABASE: args.dbName
   }
 }
 
 secrets: {
-  rootpassword: {
-    name: "password to be used for the root user"
-    type: "token"
-    params: {
-        length: 16
-        characters: "abcdedfhifj01234567890"
+    admin: {
+        name: "credentials of the admin user"
+        type: "basic"
+        params: {
+            passwordLength: 10
+            passwordCharacters: "a-Z0-9"
+        }
+        data: {  
+            username: "root"
+            password: ""
+        }
     }
-    data: token: ""
-  }
 }
 
 secrets: {
-  username: {
-    name: "username to be used for the mongodb user"
-    type: "token"
-    params: {
-        length: 16
-        characters: "abcdedfhifj01234567890"
+    user: {
+        name: "credentials of the additional user"
+        type: "basic"
+        params: {
+            usernameLength: 7
+            usernameCharacters: "a-z"
+            passwordLength: 10
+            passwordCharacters: "a-Z0-9"
+        }
+        data: {  
+            username: std.ifelse(args.dbUser != "", args.dbUser, "")
+            password: ""
+        }
     }
-    data: token: ""
-  }
-}
-
-secrets: {
-  password: {
-    name: "password to be used for the mongodb user"
-    type: "token"
-    params: {
-        length: 16
-        characters: "abcdedfhifj01234567890"
-    }
-    data: token: ""
-  }
-}
-
-secrets: {
-  "admin": {
-    type: "generated"
-    params: job: "create-secrets"
-  }
-}
-
-secrets: {
-  "user": {
-    type: "generated"
-    params: job: "create-secrets"
-  }
 }
 
 localData: readinessProbeCommand: [
   "bash",
   "-c",
-  "mongosh --quiet --username \"${MONGO_INITDB_ROOT_USERNAME}\" --password \"${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval \"db.adminCommand('ping')\""
+  "mongosh --quiet --eval \"db.adminCommand('ping')\""
 ]
 
 localData: info: """
 	## Usage
 
 	services: db: {
-		external: "@{acorn.name}"
+		image: "ghcr.io/acorn-io/mongodb:v#.#-#"
 	}
 
 	containers: app: {
