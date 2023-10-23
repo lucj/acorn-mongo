@@ -102,8 +102,4 @@ Instead of managing your own Acorn installation, you can deploy this application
 
 [![Run in Acorn](https://beta.acorn.io/v1-ui/run/badge?image=ghcr.io+acorn-io+mongodb+examples:v%23.%23-%23)](https://beta.acorn.io/run/ghcr.io/acorn-io/mongodb/examples:v%23.%23-%23)
 
-Each method will trigger the launch of the app (you will be required to authenticate using your GitHub account).
-
-## Upgrading your Sandbox
-
 An application running in the Sandbox will automatically shut down after 2 hours, but you can use the Acorn Pro plan to remove the time limit and gain additional functionalities.
