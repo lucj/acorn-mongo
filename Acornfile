@@ -67,7 +67,7 @@ secrets: {
         type: "basic"
         params: {
             passwordLength: 10
-            passwordCharacters: "a-Z0-9"
+            passwordCharacters: "A-Za-z0-9"
         }
         data: {  
             username: "root"
@@ -84,7 +84,7 @@ secrets: {
             usernameLength: 7
             usernameCharacters: "a-z"
             passwordLength: 10
-            passwordCharacters: "a-Z0-9"
+            passwordCharacters: "A-Za-z0-9"
         }
         data: {  
             username: std.ifelse(args.dbUser != "", args.dbUser, "")

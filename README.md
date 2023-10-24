@@ -4,16 +4,16 @@ MongoDB is a popular, open-source NoSQL database system that uses a document-ori
 
 ## Mongo as an Acorn Service
 
-This Acorn provides a MongoDB database as an Acorn Service.  It can be used to easily get a MongoDB database for your application during development.
-
-The Acorn image of this service is hosted in GitHub container registry at [ghcr.io/acorn-io/mongodb](ghcr.io/acorn-io/mongodb)
+The Acornfile used to create a MongoDB based Acorn Service is available in the GitHub repository at [https://github.com/acorn-io/mongodb](https://github.com/acorn-io/mongodb). This service triggers the creation of a MongoDB database running in a single container which can easily be used by an application during development.
 
 This MongoDB instance:
 - is backed by a persistent volume
 - uses a default (auto generated) password for the root user
 - defines credentials for an additional user (with access limited to a given database)
 
-By default:
+The Acorn image of this service is hosted in GitHub container registry at [ghcr.io/acorn-io/mongodb](ghcr.io/acorn-io/mongodb)
+
+Currently this Acorn has the following configuration options:
 - *dbUser* of the additional user is automatically generated
 - *dbName* is set to "mydb"
 
@@ -33,7 +33,7 @@ services: db: {
 
 The [examples folder](https://github.com/acorn-io/mongodb/tree/main/examples) contains a sample application using this Service. This app consists in a Python backend based on the FastAPI library, it displays a web page indicating the number of times the application was called, a counter is saved in the underlying MongoDB database and incremented with each request. The screenshot below shows the UI of the example application. 
 
-![UI](./images/ui.png)
+![UI](./examples/images/ui.png)
 
 To use the Mongo Service, we first define a *service* property in the Acornfile of the application:
 
@@ -95,3 +95,11 @@ acorn run -n app
 ```
 
 After a few tens of seconds an http endpoint will be returned. Using this endpoint we can access the application and see the counter incremented on each reload of the page.
+
+## About Acorn Sandbox
+
+Instead of managing your own Acorn installation, you can deploy this application in the Acorn Sandbox, the free SaaS offering provided by Acorn. Access to the sandbox requires only a GitHub account, which is used for authentication.
+
+[![Run in Acorn](https://acorn.io/v1-ui/run/badge?image=ghcr.io+acorn-io+mongodb+examples:v%23.%23-%23)](https://acorn.io/run/ghcr.io/acorn-io/mongodb/examples:v%23.%23-%23)
+
+An application running in the Sandbox will automatically shut down after 2 hours, but you can use the Acorn Pro plan to remove the time limit and gain additional functionalities.
