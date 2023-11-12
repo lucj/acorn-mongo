@@ -5,11 +5,11 @@ info:        localData.info
 icon:        "./icon.png"
 
 args: {
-  // Name of the default database
-  dbName: "mydb"
+	// Name of the default database
+	dbName: "mydb"
 
-  // Name of the default user
-  dbUser: ""
+	// Name of the default user
+	dbUser: ""
 }
 
 services: db: {
@@ -20,84 +20,92 @@ services: db: {
 	data: dbName: args.dbName
 }
 
-containers: {
-  mongodb: {
-    name: "MongoDB"
-    description: "Container running a MongoDB server"
-    image: "mongo:6.0"
-    ports: "27017/tcp"
-    env: {
-      MONGO_INITDB_ROOT_USERNAME: "secret://admin/username"
-      MONGO_INITDB_ROOT_PASSWORD: "secret://admin/password"
-    }
-    dirs: {
-      "/data/db": "volume://db-data"
-    }
-    probes: [
-      {
-        type:                "liveness"
-        initialDelaySeconds: 10
-        timeoutSeconds:      5
-        tcp:{
-          url: "tcp://localhost:27017"
-        }
-      },   
-    ]
-  }
+containers: mongodb: {
+	name:        "MongoDB"
+	description: "Container running a MongoDB server"
+	image:       "mongo:6.0"
+	ports:       "27017/tcp"
+	env: {
+		MONGO_INITDB_ROOT_USERNAME: "secret://admin/username"
+		MONGO_INITDB_ROOT_PASSWORD: "secret://admin/password"
+		REPLICA_SET_KEY:            "secret://replica-set-key/token"
+	}
+	entrypoint: [ "/acorn/scripts/start-mongodb.sh"]
+	dirs: {
+		"/acorn/scripts": "./scripts"
+		"/data/db":       "volume://mongodb-data"
+	}
+	probes: [
+		{
+			type:                "liveness"
+			initialDelaySeconds: 10
+			timeoutSeconds:      5
+			tcp: {
+				url: "tcp://localhost:27017"
+			}
+		},
+	]
 }
 
-volumes: {
-  "db-data": {}
+jobs: {
+	"init-db": {
+		image: "mongo:6.0"
+		env: {
+			MONGO_INITDB_ROOT_USERNAME: "secret://admin/username"
+			MONGO_INITDB_ROOT_PASSWORD: "secret://admin/password"
+			MONGO_USERNAME:             "secret://user/username"
+			MONGO_PASSWORD:             "secret://user/password"
+			MONGO_HOST:                 "mongodb"
+			MONGO_DATABASE:             args.dbName
+		}
+		dependsOn: ["mongodb"]
+		entrypoint: ["/acorn/scripts/render.sh"]
+		dirs: "/acorn/scripts": "./scripts"
+		files: {
+			"/var/run/replica-set": """
+   {
+      _id: "rs0",
+      version: 1,
+      members: [ { _id: 0, host: "mongodb:27017" } ]
+   }
+		"""
+		}
+	}
 }
 
-jobs: "create-user": {
-  build: context: "."
-  env: {
-    MONGO_INITDB_ROOT_USERNAME: "secret://admin/username"
-    MONGO_INITDB_ROOT_PASSWORD: "secret://admin/password"
-    MONGO_USERNAME: "secret://user/username"
-    MONGO_PASSWORD: "secret://user/password"
-    MONGO_DATABASE: args.dbName
-  }
-}
+volumes: "mongodb-data": {}
 
 secrets: {
-    admin: {
-        name: "credentials of the admin user"
-        type: "basic"
-        params: {
-            passwordLength: 10
-            passwordCharacters: "A-Za-z0-9"
-        }
-        data: {  
-            username: "root"
-            password: ""
-        }
-    }
-}
+	"replica-set-key": type: "token"
 
-secrets: {
-    user: {
-        name: "credentials of the additional user"
-        type: "basic"
-        params: {
-            usernameLength: 7
-            usernameCharacters: "a-z"
-            passwordLength: 10
-            passwordCharacters: "A-Za-z0-9"
-        }
-        data: {  
-            username: std.ifelse(args.dbUser != "", args.dbUser, "")
-            password: ""
-        }
-    }
-}
+	admin: {
+		name: "credentials of the admin user"
+		type: "basic"
+		params: {
+			passwordLength:     10
+			passwordCharacters: "A-Za-z0-9"
+		}
+		data: {
+			username: "root"
+			password: ""
+		}
+	}
 
-localData: readinessProbeCommand: [
-  "bash",
-  "-c",
-  "mongosh --quiet --eval \"db.adminCommand('ping')\""
-]
+	user: {
+		name: "credentials of the additional user"
+		type: "basic"
+		params: {
+			usernameLength:     7
+			usernameCharacters: "a-z"
+			passwordLength:     10
+			passwordCharacters: "A-Za-z0-9"
+		}
+		data: {
+			username: std.ifelse(args.dbUser != "", args.dbUser, "")
+			password: ""
+		}
+	}
+}
 
 localData: info: """
 	## Usage
@@ -117,4 +125,3 @@ localData: info: """
 		}
 	}
 	"""
-
