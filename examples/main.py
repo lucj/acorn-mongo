@@ -9,19 +9,23 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-DB_HOST = os.environ.get('DB_HOST')
-DB_PORT = os.environ.get('DB_PORT')
-DB_USER = os.environ.get('DB_USER')
-DB_PASS = os.environ.get('DB_PASS')
-DB_NAME = os.environ.get('DB_NAME')
+DB_HOST = os.environ.get("DB_HOST")
+DB_PORT = os.environ.get("DB_PORT")
+DB_USER = os.environ.get("DB_USER")
+DB_PASS = os.environ.get("DB_PASS")
+DB_NAME = os.environ.get("DB_NAME")
+DB_PROTO = os.environ.get("DB_PROTO")
 
-MONGO_URI = f"mongodb://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?authSource=admin"
+MONGO_URI = (
+    f"{DB_PROTO}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?authSource=admin"
+)
 
 client = MongoClient(MONGO_URI)
-db = client[DB_NAME] 
-collection = db.hits_collection 
+db = client[DB_NAME]
+collection = db.hits_collection
 
-@app.get('/', response_class=HTMLResponse)
+
+@app.get("/", response_class=HTMLResponse)
 async def hello(request: Request):
     # If the counter does not exist, we initialize it with a value of 0
     counter_data = collection.find_one({"_id": "page_counter"})
@@ -30,9 +34,11 @@ async def hello(request: Request):
         counter = 0
     else:
         counter = counter_data["count"]
-    
+
     # Increment the counter
     collection.update_one({"_id": "page_counter"}, {"$inc": {"count": 1}})
     counter += 1
-    
-    return templates.TemplateResponse("index.html", {"request": request, "counter": counter})
+
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "counter": counter}
+    )
