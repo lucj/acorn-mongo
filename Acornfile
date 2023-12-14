@@ -17,7 +17,10 @@ services: db: {
 	container: "mongodb"
 	secrets: ["admin", "user"]
 	ports: "27017"
-	data: dbName: args.dbName
+	data: {
+		dbName: args.dbName
+		proto:  "mongodb"
+	}
 }
 
 containers: mongodb: {
@@ -30,7 +33,7 @@ containers: mongodb: {
 		MONGO_INITDB_ROOT_PASSWORD: "secret://admin/password"
 		REPLICA_SET_KEY:            "secret://replica-set-key/token"
 	}
-	entrypoint: [ "/acorn/scripts/start-mongodb.sh"]
+	entrypoint: ["/acorn/scripts/start-mongodb.sh"]
 	dirs: {
 		"/acorn/scripts": "./scripts"
 		"/data/db":       "volume://mongodb-data"
