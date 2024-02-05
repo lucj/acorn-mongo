@@ -16,9 +16,12 @@ DB_PASS = os.environ.get("DB_PASS")
 DB_NAME = os.environ.get("DB_NAME")
 DB_PROTO = os.environ.get("DB_PROTO")
 
-MONGO_URI = (
-    f"{DB_PROTO}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?authSource=admin"
-)
+# MongoDB connection string
+MONGO_URI = f"{DB_PROTO}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?authSource=admin"
+
+# Do not specify DB_PORT if proto is mongodb+srv
+if DB_PROTO == "mongodb+srv":
+    MONGO_URI = f"{DB_PROTO}://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}?authSource=admin"
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
